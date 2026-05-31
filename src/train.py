@@ -34,14 +34,14 @@ from sklearn.preprocessing import LabelEncoder
 try:
     from xgboost import XGBClassifier
     XGBOOST_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):
     XGBOOST_AVAILABLE = False
     print("[INFO] XGBoost tidak tersedia, dilewati.")
 
 try:
     from lightgbm import LGBMClassifier
     LIGHTGBM_AVAILABLE = True
-except ImportError:
+except (ImportError, OSError):
     LIGHTGBM_AVAILABLE = False
     print("[INFO] LightGBM tidak tersedia, dilewati.")
 

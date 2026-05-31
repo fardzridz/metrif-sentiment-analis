@@ -167,7 +167,7 @@ def _build_model_definitions(max_feat: int, ngram: tuple[int, int]) -> dict:
                 ),
             ]
         )
-    except ImportError:
+    except (ImportError, OSError):
         pass
     try:
         from lightgbm import LGBMClassifier
@@ -188,7 +188,7 @@ def _build_model_definitions(max_feat: int, ngram: tuple[int, int]) -> dict:
                 ),
             ]
         )
-    except ImportError:
+    except (ImportError, OSError):
         pass
     return defs
 
@@ -263,4 +263,3 @@ def _save_and_render_training_results(results_tr, trained_m, labels_ord, y_test)
         f"(Akurasi: {results_tr[best_name]['accuracy']*100:.2f}%) "
         f"disimpan di `models/best_model.pkl`"
     )
-

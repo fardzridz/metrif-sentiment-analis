@@ -34,6 +34,23 @@ Jika perlu mengisi manual:
 pip install -r requirements.txt
 ```
 
+## System Dependency
+
+Project ini memakai LightGBM sebagai salah satu model training. Pada Railway,
+LightGBM membutuhkan library sistem Linux `libgomp.so.1`. Library tersebut
+disediakan oleh package `libgomp1`.
+
+Dependency sistem sudah ditambahkan melalui file `nixpacks.toml`:
+
+```toml
+[phases.setup]
+aptPkgs = ["...", "libgomp1"]
+```
+
+File `nixpacks.toml` harus berada di root aplikasi yang dideploy oleh Railway.
+Jika Railway diarahkan ke folder `sentimen_analis`, maka file tersebut harus
+berada di dalam folder `sentimen_analis/`.
+
 ## Environment Variable
 
 Project ini belum membutuhkan environment variable khusus selain `$PORT` dari
@@ -60,4 +77,3 @@ tambahkan variabel terkait di menu Variables Railway.
 ## URL Hosting
 
 - Railway production URL: `isi-dengan-url-railway`
-
