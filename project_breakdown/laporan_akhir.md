@@ -97,6 +97,11 @@ Pipeline preprocessing berada di `src/preprocessing.py`. Tahapannya:
 Hasil akhir preprocessing disimpan sebagai `clean_text` dan digunakan untuk
 analisis token, visualisasi, dan training model.
 
+Pada halaman Preprocessing, sistem terlebih dahulu menampilkan hasil dari
+dataset upload agar pengguna memahami bahwa preprocessing sudah berjalan
+otomatis. Fitur input teks sendiri hanya tersedia sebagai demo opsional dan
+teksnya tidak ditambahkan ke dataset maupun digunakan untuk training.
+
 ## 8. Arsitektur Sistem
 
 Project disusun modular:
@@ -133,7 +138,7 @@ Fitur utama aplikasi:
 | Kategori | Distribusi sentimen per kategori, treemap, dan radar chart. |
 | Tren Waktu | Analisis sentimen berdasarkan tanggal ulasan. |
 | Prediksi | Prediksi sentimen teks tunggal atau batch upload. |
-| Preprocessing | Visualisasi tahapan preprocessing dan daftar slang/stopword. |
+| Preprocessing | Hasil dataset asli, perbandingan `review_text` dan `clean_text`, tahapan salah satu ulasan dataset, serta demo teks manual opsional. |
 | Training Model | Training model dari dashboard dan evaluasi performa. |
 
 ## 10. Training Model

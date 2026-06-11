@@ -1,6 +1,6 @@
 __pycache__/
 *.py[cod]
-
+project_breakdown/
 # Dataset dan model merupakan data runtime/per sesi, bukan source code.
 data/*
 !data/.gitkeep

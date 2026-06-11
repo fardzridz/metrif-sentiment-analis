@@ -83,6 +83,9 @@ Pemilihan model terbaik menggunakan **Macro F1**, bukan hanya accuracy.
 
 - Halaman Ringkasan, Brand, Produk, Kategori, dan Tren menggunakan label yang
   dibuat dari rating dataset upload.
+- Halaman Preprocessing langsung menampilkan perbandingan teks asli dan
+  `clean_text` dari dataset upload. Input teks sendiri hanya demo opsional dan
+  tidak digunakan untuk training.
 - Halaman Prediksi menggunakan model machine learning hasil training pada sesi
   pengguna.
 - File batch prediksi hanya wajib memiliki kolom `Review text`.
