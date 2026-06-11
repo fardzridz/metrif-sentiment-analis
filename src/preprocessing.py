@@ -11,20 +11,24 @@ Pipeline preprocessing teks bahasa Indonesia:
 
 import re
 import string
-import nltk
 import pandas as pd
+import nltk
 from nltk.corpus import stopwords
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-
-nltk.download('stopwords', quiet=True)
-nltk.download('punkt',     quiet=True)
 
 # ── Stemmer ──────────────────────────────────────────────────────────────────
 _factory = StemmerFactory()
 _stemmer = _factory.create_stemmer()
 
 # ── Stopwords ─────────────────────────────────────────────────────────────────
-STOP_WORDS = set(stopwords.words('indonesian'))
+try:
+    STOP_WORDS = set(stopwords.words('indonesian'))
+except LookupError:
+    try:
+        nltk.download('stopwords', quiet=True)
+        STOP_WORDS = set(stopwords.words('indonesian'))
+    except Exception:
+        STOP_WORDS = set()
 EXTRA_STOP = {
     'yg','dgn','nya','utk','jg','sy','gw','gue','aja','udah','udh','sdh',
     'sudah','sih','deh','dong','nih','loh','lah','kak','bang','bro','sis',

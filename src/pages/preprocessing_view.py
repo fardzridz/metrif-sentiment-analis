@@ -12,7 +12,7 @@ from src.ui import section_header
 
 
 def render_preprocessing_page(df) -> None:
-    section_header("⚙️ Visualisasi Pipeline Preprocessing")
+    section_header("2. Preprocessing Teks")
 
     st.markdown("#### 🧪 Coba Teks Sendiri")
     demo_text = st.text_area(
@@ -121,4 +121,3 @@ def _render_dataset_preprocessing_stats(df) -> None:
     )
     fig_pp2.update_layout(height=500, yaxis={"categoryorder": "total ascending"})
     st.plotly_chart(fig_pp2, use_container_width=True, key="t7_toptoken")
-

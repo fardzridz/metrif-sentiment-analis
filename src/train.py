@@ -1,7 +1,9 @@
 """
 train.py
-Training multi-model sentiment analysis dengan ensemble dan hyperparameter tuning.
-Target akurasi: >90%
+Script eksperimen offline untuk training dan penyimpanan model lokal.
+
+Dashboard Streamlit tidak memakai output script ini. Workflow web melatih dan
+menyimpan model pada session pengguna melalui src/pages/training.py.
 """
 
 import os

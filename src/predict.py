@@ -1,6 +1,9 @@
 """
 predict.py
-Script untuk memprediksi sentimen teks baru menggunakan model yang sudah dilatih.
+Script prediksi offline menggunakan model lokal hasil src/train.py.
+
+Dashboard Streamlit tidak memakai file model ini dan menggunakan model session
+pengguna melalui src/model_service.py.
 """
 
 import os
@@ -23,7 +26,10 @@ def load_model():
 
     if os.path.exists(INFO_PATH):
         info = joblib.load(INFO_PATH)
-        print(f"Model dimuat: {info['model_name']} (akurasi: {info['accuracy']*100:.2f}%)\n")
+        best_name = info.get("best_model_name", "model lokal")
+        accuracy = info.get("results", {}).get(best_name, {}).get("accuracy")
+        accuracy_text = f"{accuracy*100:.2f}%" if accuracy is not None else "tidak tersedia"
+        print(f"Model dimuat: {best_name} (akurasi: {accuracy_text})\n")
 
     return model
 

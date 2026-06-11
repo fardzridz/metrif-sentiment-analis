@@ -1,2 +1,12 @@
-project_breakdown/
+__pycache__/
+*.py[cod]
 
+# Dataset dan model merupakan data runtime/per sesi, bukan source code.
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+
+reports/
+.venv/
+.env

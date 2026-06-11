@@ -1,119 +1,57 @@
 # SentiPro - Dashboard Analisis Sentimen Produk
 
-SentiPro adalah aplikasi dashboard berbasis Streamlit untuk analisis sentimen
-ulasan produk berbahasa Indonesia. Aplikasi ini dapat membaca dataset CSV atau
-Excel, melakukan preprocessing teks, menampilkan visualisasi interaktif, melatih
-model machine learning, dan melakukan prediksi sentimen secara real-time.
+SentiPro adalah dashboard Streamlit untuk menganalisis dan melatih model
+sentimen dari dataset yang di-upload oleh pengguna. Dataset dan model tidak
+disediakan oleh server. Setiap pengguna wajib mengikuti alur aplikasi dari
+upload sampai training sebelum fitur prediksi aktif.
 
-## Ringkasan
-
-| Item | Keterangan |
-|---|---|
-| Nama aplikasi | SentiPro |
-| Jenis project | Dashboard analisis sentimen |
-| Bahasa data | Indonesia |
-| Framework | Streamlit |
-| Machine learning | scikit-learn, TF-IDF |
-| Visualisasi | Plotly, Matplotlib, Seaborn, WordCloud |
-| Hosting | Railway |
-
-## Fitur Utama
-
-- Upload dataset CSV atau Excel langsung dari dashboard.
-- Label sentimen otomatis berdasarkan rating produk.
-- Pipeline preprocessing Bahasa Indonesia: cleaning, normalisasi slang,
-  tokenisasi, stopword removal, dan stemming.
-- Analisis ringkasan dataset, distribusi rating, distribusi sentimen, dan word
-  cloud.
-- Analisis sentimen berdasarkan brand, produk, kategori, dan tren waktu.
-- Prediksi sentimen untuk teks tunggal dan batch upload.
-- Training model langsung dari dashboard.
-- Penyimpanan model terbaik ke folder `models/`.
-
-## Tampilan Modul Dashboard
-
-| Tab | Fungsi |
-|---|---|
-| Ringkasan | Metrik utama, distribusi sentimen, rating, word cloud, dan data mentah. |
-| Brand | Ranking brand, skor sentimen, dan distribusi sentimen per brand. |
-| Produk | Produk terbaik/terendah dan contoh ulasan per produk. |
-| Kategori | Treemap, stacked bar, radar chart, dan tabel kategori. |
-| Tren Waktu | Tren sentimen harian, mingguan, atau bulanan. |
-| Prediksi | Prediksi sentimen teks tunggal dan batch file. |
-| Preprocessing | Visualisasi tahap preprocessing, kamus slang, dan stopword. |
-| Training Model | Training model, evaluasi, confusion matrix, dan classification report. |
-
-## Arsitektur Singkat
-
-```mermaid
-flowchart TD
-    A[Upload Dataset CSV/Excel] --> B[app.py - Streamlit]
-    B --> C[src/data_service.py]
-    C --> D[src/preprocessing.py]
-    D --> E[Dashboard Analisis]
-
-    B --> F[src/model_service.py]
-    F --> G[(models/best_model.pkl)]
-    G --> H[Prediksi Sentimen]
-
-    B --> I[src/pages]
-    I --> J[Ringkasan, Brand, Produk, Kategori, Tren, Prediksi, Preprocessing, Training]
-```
-
-## Struktur Folder
+## Alur Wajib
 
 ```text
-sentimen_analis/
-├── app.py
-├── requirements.txt
-├── README.md
-├── data/
-│   └── dataset.csv
-├── models/
-│   ├── best_model.pkl
-│   ├── all_models.pkl
-│   └── model_info.pkl
-├── project_breakdown/
-│   ├── README.md
-│   ├── diagram.md
-│   ├── laporan_akhir.md
-│   ├── railway_deployment.md
-│   └── ringkasan_teknis.md
-└── src/
-    ├── config.py
-    ├── data_service.py
-    ├── model_service.py
-    ├── preprocessing.py
-    ├── train.py
-    ├── predict.py
-    ├── eda.py
-    ├── ui.py
-    ├── visualization.py
-    └── pages/
-        ├── summary.py
-        ├── brand.py
-        ├── product.py
-        ├── category.py
-        ├── trend.py
-        ├── prediction.py
-        ├── preprocessing_view.py
-        └── training.py
+Upload Dataset
+      ↓
+Validasi Struktur dan Nilai
+      ↓
+Pembersihan dan Preprocessing
+      ↓
+Pelabelan Sentimen dari Rating
+      ↓
+Analisis Dataset
+      ↓
+Validasi Kesiapan Training
+      ↓
+Pembagian Data Training dan Testing
+      ↓
+Training dan Evaluasi Beberapa Model
+      ↓
+Pilih Model Terbaik berdasarkan Macro F1
+      ↓
+Prediksi Ulasan Baru
 ```
 
-## Format Dataset
+Prediksi dikunci sampai training berhasil. Model terbaik disimpan dalam
+`st.session_state`, sehingga model hanya berlaku untuk sesi pengguna yang
+melatihnya dan tidak mengganti model pengguna lain.
 
-Dataset harus memiliki kolom berikut:
+## Format Dataset Utama
 
-| Kolom | Keterangan |
+Dataset harus berupa CSV atau XLSX dengan ukuran maksimal 20 MB dan wajib
+memiliki seluruh kolom berikut:
+
+| Kolom | Aturan |
 |---|---|
-| `Product name` | Nama produk |
-| `Brand` | Merek produk |
-| `Category` | Kategori produk |
-| `Rating` | Rating 1 sampai 5 |
-| `Review date` | Tanggal ulasan |
-| `Review text` | Isi ulasan pelanggan |
+| `Product name` | Tidak boleh kosong |
+| `Brand` | Tidak boleh kosong |
+| `Category` | Tidak boleh kosong |
+| `Rating` | Bilangan bulat 1 sampai 5 |
+| `Review date` | Tanggal valid dan tidak kosong |
+| `Review text` | Teks ulasan dan tidak boleh kosong |
 
-Label sentimen dibuat dari rating:
+Nama kolom tidak sensitif terhadap kapital, spasi, atau tanda hubung. Contoh
+`Review Text`, `review text`, dan `review-text` dinormalisasi menjadi
+`review_text`.
+
+Label sentimen dibuat otomatis dari rating:
 
 | Rating | Sentimen |
 |---|---|
@@ -121,87 +59,73 @@ Label sentimen dibuat dari rating:
 | 3 | netral |
 | 4-5 | positif |
 
-## Instalasi Lokal
+## Validasi Ketat
 
-Clone repository:
+Dataset ditolak sebelum dashboard dibuka apabila:
 
-```bash
-git clone <url-repository>
-cd sentimen_analis
-```
+- File kosong, rusak, format tidak didukung, atau lebih besar dari 20 MB.
+- Kolom wajib hilang atau menjadi duplikat setelah normalisasi.
+- Kolom teks wajib memiliki nilai kosong.
+- Rating bukan angka bulat atau berada di luar rentang 1-5.
+- Tanggal kosong atau tidak dapat diparse.
+- Ulasan menjadi kosong setelah preprocessing.
 
-Buat virtual environment:
+Training diblokir apabila:
 
-```bash
-python -m venv .venv
-```
+- Dataset memiliki kurang dari 60 baris.
+- Salah satu kelas negatif, netral, atau positif tidak tersedia.
+- Salah satu kelas memiliki kurang dari jumlah minimum untuk stratified split.
 
-Aktifkan virtual environment di Windows:
+Distribusi kelas yang sangat tidak seimbang ditampilkan sebagai peringatan.
+Pemilihan model terbaik menggunakan **Macro F1**, bukan hanya accuracy.
 
-```bash
-.venv\Scripts\activate
-```
+## Analisis dan Prediksi
 
-Install dependency:
+- Halaman Ringkasan, Brand, Produk, Kategori, dan Tren menggunakan label yang
+  dibuat dari rating dataset upload.
+- Halaman Prediksi menggunakan model machine learning hasil training pada sesi
+  pengguna.
+- File batch prediksi hanya wajib memiliki kolom `Review text`.
+- Konfigurasi stemming saat prediksi selalu mengikuti konfigurasi training.
 
-```bash
-pip install -r requirements.txt
-```
+## Model Dashboard
 
-Jalankan aplikasi:
-
-```bash
-streamlit run app.py
-```
-
-Setelah berjalan, buka:
-
-```text
-http://localhost:8501
-```
-
-## Training Model
-
-Training dapat dilakukan dari tab `Training Model` di dashboard atau lewat
-command line:
-
-```bash
-cd src
-python train.py
-```
-
-Output training akan disimpan ke folder `models/`:
-
-| File | Keterangan |
-|---|---|
-| `best_model.pkl` | Model terbaik untuk prediksi. |
-| `all_models.pkl` | Semua model yang berhasil dilatih. |
-| `model_info.pkl` | Metadata model dan hasil evaluasi. |
-
-## Model Machine Learning
-
-Model yang digunakan pada proses training:
+Model yang dapat dilatih dari dashboard:
 
 - Logistic Regression
 - Complement Naive Bayes
 - Linear SVM
 - Extra Trees
-- XGBoost jika tersedia
-- LightGBM jika tersedia
 - Voting Ensemble
 
-Model terbaik yang tersimpan saat ini adalah `Linear SVM` dengan accuracy
-`80.67%` dan F1-score `73.08%`.
+Logistic Regression, Linear SVM, Extra Trees, dan komponen terkait menggunakan
+`class_weight="balanced"` untuk membantu menghadapi distribusi kelas tidak
+seimbang.
 
-## Deployment Railway
+## Data dan Model Runtime
 
-Project ini disiapkan untuk hosting di Railway.
+Dataset percobaan dan file model tidak disimpan di GitHub:
 
-Build command:
+```gitignore
+data/*
+models/*
+```
+
+Folder `data/` dan `models/` hanya dipertahankan menggunakan `.gitkeep`.
+Dashboard tidak membaca `data/dataset.csv` atau `models/best_model.pkl`.
+
+## Menjalankan Lokal
 
 ```bash
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
+streamlit run app.py
 ```
+
+Buka `http://localhost:8501`, lalu upload dataset sesuai format wajib.
+
+## Deployment Railway
 
 Start command:
 
@@ -209,31 +133,25 @@ Start command:
 streamlit run app.py --server.port $PORT --server.address 0.0.0.0
 ```
 
-Catatan:
+Model hanya berada di memori sesi. Model akan hilang saat sesi berakhir,
+aplikasi restart, atau Railway melakukan redeploy. Perilaku ini disengaja agar
+model satu pengguna tidak digunakan oleh pengguna lain.
 
-- Railway menyediakan port melalui environment variable `$PORT`.
-- Streamlit perlu dijalankan dengan `--server.address 0.0.0.0`.
-- Pastikan folder `models/` ikut masuk repository jika fitur prediksi ingin
-  langsung aktif setelah deploy.
-
-Production URL:
+## Struktur Utama
 
 ```text
-isi-dengan-url-railway
+sentimen_analis/
+├── app.py
+├── requirements.txt
+├── nixpacks.toml
+├── data/
+│   └── .gitkeep
+├── models/
+│   └── .gitkeep
+├── src/
+│   ├── data_service.py
+│   ├── model_service.py
+│   ├── preprocessing.py
+│   └── pages/
+└── tests/
 ```
-
-## Dokumentasi Tambahan
-
-Dokumentasi project yang lebih lengkap tersedia di folder `project_breakdown/`:
-
-- `project_breakdown/laporan_akhir.md`
-- `project_breakdown/diagram.md`
-- `project_breakdown/railway_deployment.md`
-- `project_breakdown/ringkasan_teknis.md`
-
-## Kesimpulan
-
-SentiPro membantu menganalisis ulasan produk secara lebih cepat melalui
-preprocessing Bahasa Indonesia, klasifikasi sentimen, visualisasi interaktif,
-dan prediksi berbasis machine learning. Aplikasi ini dapat dijalankan secara
-lokal maupun dihosting sebagai web app melalui Railway.

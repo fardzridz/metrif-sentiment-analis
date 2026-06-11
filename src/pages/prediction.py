@@ -4,19 +4,31 @@ import pandas as pd
 import streamlit as st
 
 from src.config import SENTIMENT_EMOJI
-from src.model_service import load_model, load_model_info, predict_sentiment
+from src.data_service import (
+    DatasetValidationError,
+    read_uploaded_dataset,
+    validate_prediction_dataset,
+)
+from src.model_service import (
+    get_session_model,
+    get_session_model_info,
+    predict_sentiment,
+)
 from src.preprocessing import preprocess
 from src.ui import section_header
 
 
 def render_prediction_page() -> None:
-    section_header("🔍 Prediksi Sentimen Real-Time")
-    model = load_model()
+    section_header("4. Prediksi Sentimen")
+    model = get_session_model()
     if not model:
-        st.error("Model belum tersedia. Gunakan tab 🤖 Training Model untuk melatih model terlebih dahulu.")
+        st.warning(
+            "Prediksi dikunci. Selesaikan upload, validasi, preprocessing, dan training "
+            "pada dataset sesi ini terlebih dahulu."
+        )
         return
 
-    model_info = load_model_info()
+    model_info = get_session_model_info() or {}
     _render_model_overview(model, model_info)
 
     mode = st.radio("Mode prediksi:", ["Teks Tunggal", "Batch (Upload File)"], horizontal=True, key="pred_mode")
@@ -29,7 +41,7 @@ def render_prediction_page() -> None:
 def _render_model_overview(model, model_info) -> None:
     best_name = _get_best_model_name(model_info, model)
     accuracy = _get_metric(model_info, best_name, "accuracy")
-    f1_score = _get_metric(model_info, best_name, "f1")
+    f1_score = _get_metric(model_info, best_name, "f1_macro")
     classes = _get_model_classes(model, model_info)
     vectorizer_desc, classifier_desc = _describe_pipeline(model)
 
@@ -37,15 +49,20 @@ def _render_model_overview(model, model_info) -> None:
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Model", best_name)
     c2.metric("Akurasi", _format_percent(accuracy))
-    c3.metric("F1-Score", _format_percent(f1_score))
+    c3.metric("Macro F1", _format_percent(f1_score))
     c4.metric("Kelas", ", ".join(classes) if classes else "-")
 
     with st.expander("Detail model dan alur prediksi", expanded=False):
         st.markdown(
             f"""
-**Pipeline:** teks ulasan → preprocessing → TF-IDF → classifier → label sentimen  
-**Vectorizer:** {vectorizer_desc}  
-**Classifier:** {classifier_desc}  
+**Pipeline:** teks ulasan → preprocessing → TF-IDF → classifier → label sentimen
+
+**Stemming:** {"aktif" if model_info.get("use_stemming", False) else "nonaktif"}
+
+**Vectorizer:** {vectorizer_desc}
+
+**Classifier:** {classifier_desc}
+
 **Output:** label `positif`, `netral`, atau `negatif`
             """
         )
@@ -63,10 +80,17 @@ def _render_single_prediction(model, model_info) -> None:
         st.warning("Masukkan teks terlebih dahulu.")
         return
 
-    with st.spinner("Menganalisis..."):
-        preds, probas, classes = predict_sentiment([input_text], model)
-        label = preds[0]
-        clean_text = preprocess(input_text, use_stemming=False)
+    try:
+        with st.spinner("Menganalisis..."):
+            use_stemming = model_info.get("use_stemming", False)
+            preds, probas, classes = predict_sentiment(
+                [input_text], model, use_stemming=use_stemming
+            )
+            label = preds[0]
+            clean_text = preprocess(input_text, use_stemming=use_stemming)
+    except ValueError as exc:
+        st.error(str(exc))
+        return
     st.markdown("---")
     cr1, cr2 = st.columns([1, 2])
     with cr1:
@@ -119,20 +143,37 @@ def _render_batch_prediction(model, model_info) -> None:
     if not batch_file:
         return
 
-    df_batch = pd.read_csv(batch_file) if batch_file.name.endswith(".csv") else pd.read_excel(batch_file)
-    df_batch.columns = df_batch.columns.str.lower().str.strip().str.replace(" ", "_")
-    if "review_text" not in df_batch.columns:
-        st.error("Kolom 'review_text' tidak ditemukan.")
+    try:
+        raw_batch = read_uploaded_dataset(batch_file)
+    except DatasetValidationError as exc:
+        st.error(str(exc))
+        return
+    df_batch, validation = validate_prediction_dataset(raw_batch)
+    if not validation.is_valid:
+        for message in validation.errors:
+            st.error(message)
+        st.error("File batch ditolak. Perbaiki seluruh error sebelum prediksi.")
         return
 
-    with st.spinner(f"Memprediksi {len(df_batch):,} ulasan..."):
-        preds, probas, classes = predict_sentiment(df_batch["review_text"].astype(str).tolist(), model)
-        df_batch["prediksi_sentimen"] = preds
-        df_batch["clean_text"] = df_batch["review_text"].astype(str).apply(lambda text: preprocess(text, use_stemming=False))
-        if probas is not None:
-            for i, cls in enumerate(classes):
-                df_batch[f"prob_{cls}"] = probas[:, i].round(4)
-            df_batch["confidence"] = probas.max(axis=1).round(4)
+    try:
+        with st.spinner(f"Memprediksi {len(df_batch):,} ulasan..."):
+            use_stemming = model_info.get("use_stemming", False)
+            preds, probas, classes = predict_sentiment(
+                df_batch["review_text"].astype(str).tolist(),
+                model,
+                use_stemming=use_stemming,
+            )
+            df_batch["prediksi_sentimen"] = preds
+            df_batch["clean_text"] = df_batch["review_text"].astype(str).apply(
+                lambda text: preprocess(text, use_stemming=use_stemming)
+            )
+            if probas is not None:
+                for i, cls in enumerate(classes):
+                    df_batch[f"prob_{cls}"] = probas[:, i].round(4)
+                df_batch["confidence"] = probas.max(axis=1).round(4)
+    except ValueError as exc:
+        st.error(str(exc))
+        return
     st.success(f"✅ Selesai! {len(df_batch):,} ulasan diprediksi.")
     sc2 = pd.Series(preds).value_counts()
     b1, b2, b3, b4 = st.columns(4)
